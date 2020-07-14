@@ -7,6 +7,10 @@ buildscript {
     }
 }
 
+plugins {
+    id 'com.palantir.docker' version '0.25.0'
+}
+
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'idea'
@@ -64,6 +68,7 @@ dependencies {
     compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.27.2.1'
     compile group: 'dnsjava', name: 'dnsjava', version: '2.1.9'
     compile group: 'com.azure', name: 'azure-storage-blob', version: '12.4.0'
+    compile group: 'com.azure', name: 'azure-identity', version: '1.0.6'
     testCompile group: 'junit', name: 'junit', version: '4.12'
     testCompile group: 'org.assertj', name: 'assertj-core', version: '3.9.1'
     testCompile group: 'org.mockito', name: 'mockito-core', version: '2.16.0'
@@ -129,6 +134,18 @@ applicationDistribution.into('bin') {
     from(RestoreCommand)
     from(Server)
     fileMode = 0755
+}
+
+docker {
+    name 'scalarlabs/cassy'
+    files tasks.distTar.outputs, 'docker/logback.xml', 'docker/entrypoint.sh'
+    copySpec.with {
+        from('.') {
+            include 'scripts/**'
+            into '.'
+        }
+    }
+    noCache true
 }
 
 // build should not depend on the integration tests
