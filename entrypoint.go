@@ -10,7 +10,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	gw "./src/main/proto"
+	gw "github.com/scalar-labs/cassy/entrypoint/src/main/proto"
 )
 
 var (
@@ -26,6 +26,13 @@ func run() error {
 	defer cancel()
 
 	mux := runtime.NewServeMux()
+	httpMux := http.NewServeMux()
+	prefix := "/v1/"
+	httpMux.Handle(prefix, mux)
+	fs := http.FileServer(http.Dir("./gui/dist"))
+	httpMux.Handle("/", fs)
+
+
 	opts := []grpc.DialOption{grpc.WithInsecure()}
 	err := gw.RegisterCassyHandlerFromEndpoint(ctx, mux, *endpoint, opts)
 	if err != nil {
@@ -35,7 +42,7 @@ func run() error {
 	if *mode == "dev" {
 		return http.ListenAndServe(":8090", allowCORS(mux))
 	} else if *mode == "prod" {
-		return http.ListenAndServe(":8080", mux)
+		return http.ListenAndServe(":8080", httpMux)
 	} else {
 		glog.Fatal("Please select a valid mode")
 	}
